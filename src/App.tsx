@@ -1,104 +1,104 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const TOTAL_DURATION = 40;
 const RED = '#E11D48';
 const GREEN = '#16A34A';
 
-// Scene timing definitions
-const SCENES = {
-  intro: { start: 0, end: 5 },
-  cards: { start: 3, end: 6 },
-  scene1: { start: 6, end: 16 },
-  scene2: { start: 16, end: 26 },
-  scene3: { start: 26, end: 36 },
-  final: { start: 36, end: 40.5 },
-};
-
-function getSceneOpacity(time: number, start: number, end: number, fadeIn = 0.4, fadeOut = 0.4) {
-  if (time < start || time > end) return 0;
-  if (time < start + fadeIn) return (time - start) / fadeIn;
-  if (time > end - fadeOut) return (end - time) / fadeOut;
-  return 1;
-}
-
 export default function App() {
   const [time, setTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
-  const animRef = useRef<number>(0);
-  const lastTimeRef = useRef<number>(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const startAnimation = useCallback(() => {
-    setIsPlaying(true);
-    setHasStarted(true);
+  const startAnimation = () => {
     setTime(0);
-    lastTimeRef.current = performance.now();
-  }, []);
+    setHasStarted(true);
+    setIsPlaying(true);
+  };
 
   useEffect(() => {
-    if (!isPlaying) return;
-
-    const tick = (now: number) => {
-      const delta = (now - lastTimeRef.current) / 1000;
-      lastTimeRef.current = now;
-      setTime(prev => {
-        const next = prev + delta;
-        if (next >= TOTAL_DURATION) {
-          setIsPlaying(false);
-          return TOTAL_DURATION;
-        }
-        return next;
-      });
-      animRef.current = requestAnimationFrame(tick);
+    if (isPlaying) {
+      intervalRef.current = setInterval(() => {
+        setTime(prev => {
+          const next = prev + 0.05;
+          if (next >= TOTAL_DURATION) {
+            setIsPlaying(false);
+            return TOTAL_DURATION;
+          }
+          return next;
+        });
+      }, 50);
+    }
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
     };
-
-    animRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(animRef.current);
   }, [isPlaying]);
 
   const progress = Math.min((time / TOTAL_DURATION) * 100, 100);
   const displayTime = Math.floor(time);
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-2 sm:p-4 select-none">
-      {/* 9:16 Vertical Container */}
-      <div
-        className="relative bg-white overflow-hidden shadow-2xl rounded-2xl"
-        style={{ aspectRatio: '9/16', maxHeight: '95vh', width: 'auto', maxWidth: 'min(100%, 420px)' }}
-      >
+    <div style={{ minHeight: '100vh', background: '#030712', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+      <div style={{
+        position: 'relative',
+        background: 'white',
+        overflow: 'hidden',
+        width: '375px',
+        height: '667px',
+        maxWidth: '95vw',
+        maxHeight: '95vh',
+        borderRadius: '16px',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+      }}>
         {/* Scenes */}
-        <div className="absolute inset-0">
-          <SceneIntro time={time} />
-          <SceneCards time={time} />
-          <Scene1 time={time} />
-          <Scene2 time={time} />
-          <Scene3 time={time} />
-          <SceneFinal time={time} />
-        </div>
+        {time < 5.5 && <IntroScene time={time} />}
+        {time >= 3 && time < 6 && <CardsScene time={time} />}
+        {time >= 6 && time < 16 && <Scene1Job time={time} />}
+        {time >= 16 && time < 26 && <Scene2Numbers time={time} />}
+        {time >= 26 && time < 36 && <Scene3Contacts time={time} />}
+        {time >= 36 && time <= TOTAL_DURATION && <SceneFinalEnd time={time} />}
 
         {/* Progress Bar */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gray-100 z-50">
-          <div
-            className="h-full rounded-r-full"
-            style={{
-              width: `${progress}%`,
-              backgroundColor: GREEN,
-              transition: 'width 0.1s linear',
-            }}
-          />
-        </div>
+        {hasStarted && (
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: '#f3f4f6', zIndex: 50 }}>
+            <div style={{ height: '100%', width: `${progress}%`, background: GREEN }} />
+          </div>
+        )}
 
         {/* Timer */}
         {hasStarted && time < TOTAL_DURATION && (
-          <div className="absolute top-3 right-3 z-50 bg-gray-900/80 backdrop-blur-sm text-white text-xs font-mono px-2.5 py-1 rounded-full">
+          <div style={{
+            position: 'absolute',
+            top: '12px',
+            right: '12px',
+            zIndex: 50,
+            background: 'rgba(17, 24, 39, 0.8)',
+            color: 'white',
+            fontSize: '12px',
+            fontFamily: 'monospace',
+            padding: '4px 10px',
+            borderRadius: '9999px',
+          }}>
             {displayTime}/{TOTAL_DURATION}
           </div>
         )}
 
         {/* Start Overlay */}
         {!hasStarted && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center z-50 bg-white">
-            <div className="mb-6">
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 50,
+            background: 'white',
+          }}>
+            <div style={{ marginBottom: '24px' }}>
               <svg width="80" height="80" viewBox="0 0 80 80">
                 <circle cx="40" cy="40" r="36" fill="none" stroke={GREEN} strokeWidth="3" />
                 <polygon points="32,24 58,40 32,56" fill={GREEN} />
@@ -106,20 +106,52 @@ export default function App() {
             </div>
             <button
               onClick={startAnimation}
-              className="bg-gray-900 text-white px-8 py-3.5 rounded-full text-base font-bold hover:bg-gray-700 active:scale-95 transition-all shadow-lg"
+              style={{
+                background: '#111827',
+                color: 'white',
+                padding: '14px 32px',
+                borderRadius: '9999px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+              }}
             >
-              ▶ Запустить
+              ▶ Запустить видео
             </button>
-            <p className="text-xs text-gray-400 mt-3">40 секунд • Резюме</p>
+            <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '12px' }}>40 секунд • Резюме</p>
           </div>
         )}
 
         {/* Replay Overlay */}
         {hasStarted && time >= TOTAL_DURATION && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center z-50 bg-white/90 backdrop-blur-sm">
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 50,
+            background: 'rgba(255,255,255,0.9)',
+          }}>
             <button
               onClick={startAnimation}
-              className="bg-gray-900 text-white px-8 py-3.5 rounded-full text-base font-bold hover:bg-gray-700 active:scale-95 transition-all shadow-lg"
+              style={{
+                background: '#111827',
+                color: 'white',
+                padding: '14px 32px',
+                borderRadius: '9999px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+              }}
             >
               ↻ Смотреть снова
             </button>
@@ -130,148 +162,136 @@ export default function App() {
   );
 }
 
-/* ============ SCENE: INTRO (0–5s) ============ */
-function SceneIntro({ time }: { time: number }) {
-  const opacity = getSceneOpacity(time, SCENES.intro.start, SCENES.intro.end, 0.01, 0.5);
-  if (opacity <= 0) return null;
-
-  const t = time;
-  const resumeSlide = Math.min(t / 0.6, 1);
-  const titleShow = t >= 0.6;
-  const titleScale = t >= 0.6 ? Math.min((t - 0.6) / 0.3, 1) : 0;
-  const characterShow = t >= 1.2;
-  const progressBarShow = t >= 2;
-  const progressValue = t >= 2 ? Math.min(((t - 2) / 1.5) * 10, 10) : 0;
-
+// ===== INTRO SCENE =====
+function IntroScene({ time }: { time: number }) {
+  const opacity = time < 0.5 ? time / 0.5 : time > 5 ? (5.5 - time) / 0.5 : 1;
+  
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ opacity }}>
+    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px', opacity }}>
       {/* Title */}
-      <div
-        className="absolute top-12 left-4 right-4 text-center z-10"
-        style={{
-          opacity: titleScale,
-          transform: `scale(${0.5 + titleScale * 0.5})`,
-          transition: 'none',
-        }}
-      >
-        <h1 className="text-lg sm:text-xl font-black text-gray-900 leading-tight tracking-tight">
+      <div style={{
+        position: 'absolute',
+        top: '40px',
+        left: '16px',
+        right: '16px',
+        textAlign: 'center',
+        opacity: time >= 0.8 ? 1 : 0,
+        transform: time >= 0.8 ? 'scale(1)' : 'scale(0.5)',
+        transition: 'all 0.3s ease-out',
+      }}>
+        <h1 style={{ fontSize: '18px', fontWeight: 900, color: '#111827', lineHeight: 1.2 }}>
           ЗА 40 СЕКУНД —
         </h1>
-        <h1 className="text-lg sm:text-xl font-black leading-tight tracking-tight mt-1">
+        <h1 style={{ fontSize: '18px', fontWeight: 900, lineHeight: 1.2, marginTop: '4px' }}>
           <span style={{ color: RED }}>РЕЗЮМЕ</span>,
         </h1>
-        <h1 className="text-lg sm:text-xl font-black leading-tight tracking-tight">
+        <h1 style={{ fontSize: '18px', fontWeight: 900, lineHeight: 1.2 }}>
           НА КОТОРОЕ <span style={{ color: GREEN }}>ОТВЕТЯТ</span>
         </h1>
       </div>
 
       {/* Resume Sheet */}
-      <div
-        className="w-40 h-56 bg-white border-2 border-gray-200 rounded-lg shadow-xl relative mt-8"
-        style={{
-          transform: `translateY(${(1 - resumeSlide) * 120}%)`,
-        }}
-      >
-        <div className="p-3 space-y-2 pt-4">
-          <div className="h-2 bg-gray-100 rounded-full w-3/4" />
-          <div className="h-2 bg-gray-100 rounded-full w-full" />
-          <div className="h-2 bg-gray-100 rounded-full w-2/3" />
-          <div className="h-2 bg-gray-100 rounded-full w-full" />
-          <div className="h-2 bg-gray-100 rounded-full w-1/2" />
-          <div className="h-2 bg-gray-100 rounded-full w-5/6" />
-          <div className="h-2 bg-gray-100 rounded-full w-3/4" />
+      <div style={{
+        width: '160px',
+        height: '208px',
+        background: 'white',
+        border: '2px solid #e5e7eb',
+        borderRadius: '8px',
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+        marginTop: '24px',
+        transform: time < 0.6 ? 'translateY(120%)' : 'translateY(0)',
+        transition: 'transform 0.6s ease-out',
+      }}>
+        <div style={{ padding: '12px', paddingTop: '16px' }}>
+          {[0.75, 1, 0.66, 1, 0.5, 0.83].map((w, i) => (
+            <div key={i} style={{ height: '8px', background: '#f3f4f6', borderRadius: '4px', width: `${w * 100}%`, marginBottom: '8px' }} />
+          ))}
         </div>
-        {/* Header bar */}
-        <div className="absolute top-0 left-0 right-0 h-6 bg-gray-50 rounded-t-lg border-b border-gray-100" />
       </div>
 
       {/* Character */}
-      <div
-        className="absolute bottom-28 left-4 sm:left-8"
-        style={{
-          opacity: characterShow ? 1 : 0,
-          transform: characterShow ? 'translateX(0)' : 'translateX(-60px)',
-          transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
-        }}
-      >
+      <div style={{
+        position: 'absolute',
+        bottom: '96px',
+        left: '24px',
+        opacity: time >= 1.2 ? 1 : 0,
+        transform: time >= 1.2 ? 'translateX(0)' : 'translateX(-60px)',
+        transition: 'all 0.5s ease-out',
+      }}>
         <Character pointing />
       </div>
 
       {/* Progress Bar */}
-      <div
-        className="absolute bottom-12 left-6 right-6"
-        style={{ opacity: progressBarShow ? 1 : 0, transition: 'opacity 0.3s' }}
-      >
-        <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-          <div
-            className="h-full rounded-full"
-            style={{
-              width: `${progressValue}%`,
-              backgroundColor: GREEN,
-              transition: 'width 0.3s ease-out',
-            }}
-          />
+      <div style={{
+        position: 'absolute',
+        bottom: '40px',
+        left: '24px',
+        right: '24px',
+        opacity: time >= 2 ? 1 : 0,
+        transition: 'opacity 0.3s',
+      }}>
+        <div style={{ height: '10px', background: '#f3f4f6', borderRadius: '9999px', overflow: 'hidden' }}>
+          <div style={{
+            height: '100%',
+            borderRadius: '9999px',
+            width: `${time >= 2 ? Math.min(((time - 2) / 1.5) * 10, 10) : 0}%`,
+            background: GREEN,
+            transition: 'width 0.3s',
+          }} />
         </div>
-        <p className="text-[10px] text-gray-400 mt-1 text-center font-bold tracking-wide">{Math.round(progressValue)}%</p>
+        <p style={{ fontSize: '10px', color: '#9ca3af', marginTop: '4px', textAlign: 'center', fontWeight: 'bold' }}>
+          {time >= 2 ? Math.round(Math.min(((time - 2) / 1.5) * 10, 10)) : 0}%
+        </p>
       </div>
     </div>
   );
 }
 
-/* ============ SCENE: CARDS (3–6s) ============ */
-function SceneCards({ time }: { time: number }) {
-  const opacity = getSceneOpacity(time, SCENES.cards.start, SCENES.cards.end, 0.3, 0.5);
-  if (opacity <= 0) return null;
+// ===== CARDS SCENE =====
+function CardsScene({ time }: { time: number }) {
+  const lt = time - 3;
+  const opacity = lt < 0.3 ? lt / 0.3 : time > 5.5 ? (6 - time) / 0.5 : 1;
 
-  const t = time;
   const cards = [
-    { label: 'ОДНА ДОЛЖНОСТЬ', emoji: '🎯', delay: 3.2 },
-    { label: 'ЦИФРЫ', emoji: '📊', delay: 3.6 },
-    { label: 'КОНТАКТЫ', emoji: '📞', delay: 4.0 },
+    { label: 'ОДНА ДОЛЖНОСТЬ', emoji: '🎯', delay: 0.2 },
+    { label: 'ЦИФРЫ', emoji: '📊', delay: 0.6 },
+    { label: 'КОНТАКТЫ', emoji: '📞', delay: 1.0 },
   ];
-  const showCross = t >= 4.6;
-  const progressJump = t >= 3.1;
 
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center px-6" style={{ opacity }}>
+    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', opacity }}>
       {/* Progress bar at 10% */}
-      <div className="absolute top-8 left-6 right-6">
-        <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-          <div
-            className="h-full rounded-full"
-            style={{
-              width: progressJump ? '10%' : '0%',
-              backgroundColor: GREEN,
-              transition: 'width 0.4s ease-out',
-            }}
-          />
+      <div style={{ position: 'absolute', top: '32px', left: '24px', right: '24px' }}>
+        <div style={{ height: '10px', background: '#f3f4f6', borderRadius: '9999px', overflow: 'hidden' }}>
+          <div style={{ height: '100%', borderRadius: '9999px', width: '10%', background: GREEN }} />
         </div>
-        <p className="text-[10px] text-gray-400 mt-1 text-center font-bold">10%</p>
+        <p style={{ fontSize: '10px', color: '#9ca3af', marginTop: '4px', textAlign: 'center', fontWeight: 'bold' }}>10%</p>
       </div>
 
-      <h2 className="text-base font-black text-gray-900 mb-6 tracking-tight mt-4">ТРИ ПРАВИЛА</h2>
+      <h2 style={{ fontSize: '16px', fontWeight: 900, color: '#111827', marginBottom: '24px', marginTop: '16px' }}>ТРИ ПРАВИЛА</h2>
 
-      <div className="flex flex-col gap-3 w-full max-w-[260px]">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', maxWidth: '260px' }}>
         {cards.map((card, i) => {
-          const visible = t >= card.delay;
-          const tapped = t >= card.delay + 0.4;
+          const visible = lt >= card.delay;
+          const tapped = lt >= card.delay + 0.4;
           return (
-            <div
-              key={i}
-              className="bg-white border-2 border-gray-100 rounded-xl px-4 py-3 flex items-center gap-3 shadow-sm"
-              style={{
-                opacity: visible ? 1 : 0,
-                transform: visible
-                  ? tapped ? 'scale(1.03)' : 'scale(1) translateX(0)'
-                  : 'translateX(80px) scale(0.9)',
-                transition: visible ? 'transform 0.25s ease-out' : 'none',
-                borderColor: tapped ? GREEN : '#f3f4f6',
-              }}
-            >
-              <span className="text-xl">{card.emoji}</span>
-              <span className="font-bold text-gray-800 text-sm tracking-tight">{card.label}</span>
+            <div key={i} style={{
+              background: 'white',
+              border: `2px solid ${tapped ? GREEN : '#f3f4f6'}`,
+              borderRadius: '12px',
+              padding: '12px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              opacity: visible ? 1 : 0,
+              transform: visible ? (tapped ? 'scale(1.03)' : 'scale(1)') : 'translateX(80px)',
+              transition: 'all 0.3s ease-out',
+            }}>
+              <span style={{ fontSize: '24px' }}>{card.emoji}</span>
+              <span style={{ fontWeight: 'bold', color: '#1f2937', fontSize: '14px' }}>{card.label}</span>
               {tapped && (
-                <svg width="16" height="16" viewBox="0 0 16 16" className="ml-auto">
+                <svg width="16" height="16" viewBox="0 0 16 16" style={{ marginLeft: 'auto' }}>
                   <polyline points="3,8 6,11 13,4" fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               )}
@@ -280,29 +300,25 @@ function SceneCards({ time }: { time: number }) {
         })}
       </div>
 
-      {/* Character tapping */}
-      <div
-        className="absolute bottom-28 left-4"
-        style={{
-          opacity: t >= 3.3 ? 1 : 0,
-          transition: 'opacity 0.3s',
-        }}
-      >
+      {/* Character */}
+      <div style={{ position: 'absolute', bottom: '96px', left: '16px', opacity: lt >= 0.3 ? 1 : 0, transition: 'opacity 0.3s' }}>
         <Character pointing />
       </div>
 
-      {/* Red Cross over "УНИВЕРСАЛЬНОСТЬ" */}
-      <div
-        className="absolute bottom-12 left-0 right-0 text-center"
-        style={{
-          opacity: showCross ? 1 : 0,
-          transform: showCross ? 'scale(1)' : 'scale(0.8)',
-          transition: 'all 0.25s ease-out',
-        }}
-      >
-        <div className="relative inline-block px-4 py-1">
-          <span className="text-gray-300 text-sm font-bold tracking-wide">УНИВЕРСАЛЬНОСТЬ</span>
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 30" preserveAspectRatio="none">
+      {/* Red Cross */}
+      <div style={{
+        position: 'absolute',
+        bottom: '40px',
+        left: 0,
+        right: 0,
+        textAlign: 'center',
+        opacity: lt >= 1.6 ? 1 : 0,
+        transform: lt >= 1.6 ? 'scale(1)' : 'scale(0.8)',
+        transition: 'all 0.25s',
+      }}>
+        <div style={{ position: 'relative', display: 'inline-block', padding: '4px 16px' }}>
+          <span style={{ color: '#d1d5db', fontSize: '14px', fontWeight: 'bold' }}>УНИВЕРСАЛЬНОСТЬ</span>
+          <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} viewBox="0 0 200 30" preserveAspectRatio="none">
             <line x1="10" y1="25" x2="190" y2="5" stroke={RED} strokeWidth="3" strokeLinecap="round" />
           </svg>
         </div>
@@ -311,12 +327,13 @@ function SceneCards({ time }: { time: number }) {
   );
 }
 
-/* ============ SCENE 1: ONE POSITION (6–16s) ============ */
-function Scene1({ time }: { time: number }) {
-  const opacity = getSceneOpacity(time, SCENES.scene1.start, SCENES.scene1.end, 0.4, 0.5);
-  if (opacity <= 0) return null;
+// ===== SCENE 1: ONE POSITION =====
+function Scene1Job({ time }: { time: number }) {
+  const lt = time - 6;
+  const fadeIn = Math.min(lt / 0.4, 1);
+  const fadeOut = time > 15.5 ? (16 - time) / 0.5 : 1;
+  const opacity = Math.min(fadeIn, fadeOut);
 
-  const lt = time - 6; // local time
   const jobs = [
     'Менеджер проектов', 'UX/UI Дизайнер', 'Бизнес-аналитик',
     'Frontend-разработчик', 'SMM-маркетолог', 'Копирайтер',
@@ -324,33 +341,19 @@ function Scene1({ time }: { time: number }) {
   ];
 
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-start pt-10 px-4" style={{ opacity }}>
-      {/* Scene badge */}
-      <div
-        className="mb-3 px-3 py-1 rounded-full text-xs font-bold"
-        style={{
-          backgroundColor: `${GREEN}15`,
-          color: GREEN,
-          opacity: lt >= 0 ? 1 : 0,
-          transform: lt >= 0 ? 'translateY(0)' : 'translateY(-15px)',
-          transition: 'all 0.3s',
-        }}
-      >
+    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingTop: '40px', padding: '40px 16px 16px', opacity }}>
+      <div style={{ marginBottom: '8px', padding: '4px 12px', borderRadius: '9999px', fontSize: '12px', fontWeight: 'bold', background: '#f0fdf4', color: GREEN }}>
         ПРАВИЛО 1
       </div>
+      <h2 style={{ fontSize: '16px', fontWeight: 900, color: '#111827', marginBottom: '12px', textAlign: 'center' }}>ОДНА ДОЛЖНОСТЬ</h2>
 
-      <h2 className="text-base font-black text-gray-900 mb-3 tracking-tight text-center">ОДНА ДОЛЖНОСТЬ</h2>
-
-      {/* Resume with job list */}
-      <div className="w-52 bg-white border-2 border-gray-100 rounded-xl p-3 shadow-lg relative overflow-hidden">
-        {/* Paper header */}
-        <div className="h-4 bg-gray-50 rounded-t-md mb-2 -mt-1 -mx-1 px-2 flex items-center gap-1">
-          <div className="w-1.5 h-1.5 rounded-full bg-red-300" />
-          <div className="w-1.5 h-1.5 rounded-full bg-yellow-300" />
-          <div className="w-1.5 h-1.5 rounded-full bg-green-300" />
+      <div style={{ width: '208px', background: 'white', border: '2px solid #f3f4f6', borderRadius: '12px', padding: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+        <div style={{ height: '12px', background: '#f9fafb', borderRadius: '4px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px', padding: '0 8px' }}>
+          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fca5a5' }} />
+          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fde047' }} />
+          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#86efac' }} />
         </div>
-
-        <div className="space-y-1">
+        <div>
           {jobs.map((job, i) => {
             const crossTime = 0.5 + i * 0.7;
             const isCrossed = lt >= crossTime;
@@ -358,28 +361,33 @@ function Scene1({ time }: { time: number }) {
             const highlightLast = lt >= 7.5;
 
             return (
-              <div
-                key={i}
-                className="flex items-center gap-2 py-0.5 px-1.5 rounded"
-                style={{
-                  opacity: isCrossed && !isLast ? 0.35 : 1,
-                  backgroundColor: isLast && highlightLast ? '#dcfce7' : 'transparent',
-                  transition: 'all 0.3s ease',
-                }}
-              >
-                <span
-                  className={`text-[11px] flex-1 ${isCrossed && !isLast ? 'line-through text-gray-400' : 'text-gray-700 font-medium'}`}
-                >
+              <div key={i} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '2px 4px',
+                borderRadius: '4px',
+                opacity: isCrossed && !isLast ? 0.35 : 1,
+                background: isLast && highlightLast ? '#dcfce7' : 'transparent',
+                transition: 'all 0.3s',
+              }}>
+                <span style={{
+                  fontSize: '11px',
+                  flex: 1,
+                  textDecoration: isCrossed && !isLast ? 'line-through' : 'none',
+                  color: isCrossed && !isLast ? '#9ca3af' : '#374151',
+                  fontWeight: '500',
+                }}>
                   {job}
                 </span>
                 {isCrossed && !isLast && (
-                  <svg width="12" height="12" viewBox="0 0 12 12" className="flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 12 12" style={{ flexShrink: 0 }}>
                     <line x1="2" y1="2" x2="10" y2="10" stroke={RED} strokeWidth="2" strokeLinecap="round" />
                     <line x1="10" y1="2" x2="2" y2="10" stroke={RED} strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 )}
                 {isLast && highlightLast && (
-                  <svg width="14" height="14" viewBox="0 0 14 14" className="flex-shrink-0">
+                  <svg width="14" height="14" viewBox="0 0 14 14" style={{ flexShrink: 0 }}>
                     <polyline points="2,7 5,10 12,3" fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 )}
@@ -389,12 +397,8 @@ function Scene1({ time }: { time: number }) {
         </div>
       </div>
 
-      {/* Caption */}
-      <div
-        className="absolute bottom-10 left-4 right-4 text-center"
-        style={{ opacity: lt >= 1 ? 1 : 0, transition: 'opacity 0.3s' }}
-      >
-        <p className="text-xs font-bold text-gray-700 bg-gray-50 border border-gray-100 rounded-lg px-4 py-2 inline-block">
+      <div style={{ position: 'absolute', bottom: '40px', left: '16px', right: '16px', textAlign: 'center', opacity: lt >= 1 ? 1 : 0, transition: 'opacity 0.3s' }}>
+        <p style={{ fontSize: '12px', fontWeight: 'bold', color: '#374151', background: '#f9fafb', border: '1px solid #f3f4f6', borderRadius: '8px', padding: '8px 16px', display: 'inline-block' }}>
           ОДНА ДОЛЖНОСТЬ = ОДИН ШАНС
         </p>
       </div>
@@ -402,21 +406,15 @@ function Scene1({ time }: { time: number }) {
   );
 }
 
-/* ============ SCENE 2: NUMBERS (16–26s) ============ */
-function Scene2({ time }: { time: number }) {
-  const opacity = getSceneOpacity(time, SCENES.scene2.start, SCENES.scene2.end, 0.4, 0.5);
-  if (opacity <= 0) return null;
-
+// ===== SCENE 2: NUMBERS =====
+function Scene2Numbers({ time }: { time: number }) {
   const lt = time - 16;
+  const fadeIn = Math.min(lt / 0.4, 1);
+  const fadeOut = time > 25.5 ? (26 - time) / 0.5 : 1;
+  const opacity = Math.min(fadeIn, fadeOut);
   const showNumbers = lt >= 4;
 
-  const vagueLines = [
-    'отвечал за задачи',
-    'занимался продажами',
-    'работал с клиентами',
-    'управлял проектами',
-  ];
-
+  const vagueLines = ['отвечал за задачи', 'занимался продажами', 'работал с клиентами', 'управлял проектами'];
   const numbers = [
     { value: '+30%', label: 'рост продаж', delay: 4.2 },
     { value: '×2', label: 'скорость работы', delay: 5.2 },
@@ -424,41 +422,38 @@ function Scene2({ time }: { time: number }) {
   ];
 
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-start pt-10 px-4" style={{ opacity }}>
-      {/* Scene badge */}
-      <div
-        className="mb-3 px-3 py-1 rounded-full text-xs font-bold"
-        style={{ backgroundColor: `${GREEN}15`, color: GREEN }}
-      >
+    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingTop: '40px', padding: '40px 16px 16px', opacity }}>
+      <div style={{ marginBottom: '8px', padding: '4px 12px', borderRadius: '9999px', fontSize: '12px', fontWeight: 'bold', background: '#f0fdf4', color: GREEN }}>
         ПРАВИЛО 2
       </div>
+      <h2 style={{ fontSize: '14px', fontWeight: 900, color: '#111827', marginBottom: '12px', textAlign: 'center' }}>ЦИФРЫ ВМЕСТО ОБЯЗАННОСТЕЙ</h2>
 
-      <h2 className="text-sm font-black text-gray-900 mb-3 tracking-tight text-center">ЦИФРЫ ВМЕСТО ОБЯЗАННОСТЕЙ</h2>
-
-      {/* Resume */}
-      <div className="w-52 bg-white border-2 border-gray-100 rounded-xl p-3 shadow-lg relative overflow-hidden">
-        {/* Paper header */}
-        <div className="h-4 bg-gray-50 rounded-t-md mb-2 -mt-1 -mx-1 px-2 flex items-center gap-1">
-          <div className="w-1.5 h-1.5 rounded-full bg-red-300" />
-          <div className="w-1.5 h-1.5 rounded-full bg-yellow-300" />
-          <div className="w-1.5 h-1.5 rounded-full bg-green-300" />
+      <div style={{ width: '208px', background: 'white', border: '2px solid #f3f4f6', borderRadius: '12px', padding: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+        <div style={{ height: '12px', background: '#f9fafb', borderRadius: '4px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px', padding: '0 8px' }}>
+          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fca5a5' }} />
+          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fde047' }} />
+          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#86efac' }} />
         </div>
 
         {!showNumbers ? (
-          <div className="space-y-2.5">
+          <div>
             {vagueLines.map((line, i) => {
               const crossTime = 1 + i * 0.7;
               const isCrossed = lt >= crossTime;
               return (
-                <div key={i} className="flex items-center gap-2">
-                  <span
-                    className={`text-[11px] italic flex-1 ${isCrossed ? 'text-gray-300 line-through' : 'text-gray-500'}`}
-                    style={{ transition: 'all 0.3s' }}
-                  >
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <span style={{
+                    fontSize: '11px',
+                    fontStyle: 'italic',
+                    flex: 1,
+                    color: isCrossed ? '#d1d5db' : '#6b7280',
+                    textDecoration: isCrossed ? 'line-through' : 'none',
+                    transition: 'all 0.3s',
+                  }}>
                     «{line}»
                   </span>
                   {isCrossed && (
-                    <svg width="12" height="12" viewBox="0 0 12 12" className="flex-shrink-0">
+                    <svg width="12" height="12" viewBox="0 0 12 12" style={{ flexShrink: 0 }}>
                       <line x1="2" y1="2" x2="10" y2="10" stroke={RED} strokeWidth="2" strokeLinecap="round" />
                       <line x1="10" y1="2" x2="2" y2="10" stroke={RED} strokeWidth="2" strokeLinecap="round" />
                     </svg>
@@ -468,24 +463,26 @@ function Scene2({ time }: { time: number }) {
             })}
           </div>
         ) : (
-          <div className="space-y-2">
+          <div>
             {numbers.map((num, i) => {
               const visible = lt >= num.delay;
               return (
-                <div
-                  key={i}
-                  className="flex items-center gap-2 rounded-lg p-2 border"
-                  style={{
-                    backgroundColor: '#f0fdf4',
-                    borderColor: visible ? GREEN : 'transparent',
-                    opacity: visible ? 1 : 0,
-                    transform: visible ? 'translateX(0) scale(1)' : 'translateX(30px) scale(0.8)',
-                    transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                  }}
-                >
-                  <span className="text-sm font-black" style={{ color: GREEN }}>{num.value}</span>
-                  <span className="text-[10px] text-gray-600 flex-1">{num.label}</span>
-                  <svg width="14" height="14" viewBox="0 0 14 14" className="flex-shrink-0">
+                <div key={i} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  borderRadius: '8px',
+                  padding: '8px',
+                  border: `2px solid ${visible ? GREEN : 'transparent'}`,
+                  background: '#f0fdf4',
+                  opacity: visible ? 1 : 0,
+                  transform: visible ? 'translateX(0)' : 'translateX(30px)',
+                  transition: 'all 0.4s ease-out',
+                  marginBottom: '8px',
+                }}>
+                  <span style={{ fontSize: '14px', fontWeight: 900, color: GREEN }}>{num.value}</span>
+                  <span style={{ fontSize: '10px', color: '#4b5563', flex: 1 }}>{num.label}</span>
+                  <svg width="14" height="14" viewBox="0 0 14 14" style={{ flexShrink: 0 }}>
                     <polyline points="2,7 5,10 12,3" fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
@@ -495,12 +492,8 @@ function Scene2({ time }: { time: number }) {
         )}
       </div>
 
-      {/* Caption */}
-      <div
-        className="absolute bottom-10 left-4 right-4 text-center"
-        style={{ opacity: lt >= 1 ? 1 : 0, transition: 'opacity 0.3s' }}
-      >
-        <p className="text-xs font-bold text-gray-700 bg-gray-50 border border-gray-100 rounded-lg px-4 py-2 inline-block">
+      <div style={{ position: 'absolute', bottom: '40px', left: '16px', right: '16px', textAlign: 'center', opacity: lt >= 1 ? 1 : 0, transition: 'opacity 0.3s' }}>
+        <p style={{ fontSize: '12px', fontWeight: 'bold', color: '#374151', background: '#f9fafb', border: '1px solid #f3f4f6', borderRadius: '8px', padding: '8px 16px', display: 'inline-block' }}>
           ЦИФРЫ, А НЕ ОБЯЗАННОСТИ
         </p>
       </div>
@@ -508,98 +501,69 @@ function Scene2({ time }: { time: number }) {
   );
 }
 
-/* ============ SCENE 3: CONTACTS ON TOP (26–36s) ============ */
-function Scene3({ time }: { time: number }) {
-  const opacity = getSceneOpacity(time, SCENES.scene3.start, SCENES.scene3.end, 0.4, 0.5);
-  if (opacity <= 0) return null;
-
+// ===== SCENE 3: CONTACTS =====
+function Scene3Contacts({ time }: { time: number }) {
   const lt = time - 26;
+  const fadeIn = Math.min(lt / 0.4, 1);
+  const fadeOut = time > 35.5 ? (36 - time) / 0.5 : 1;
+  const opacity = Math.min(fadeIn, fadeOut);
   const movedToTop = lt >= 3.5;
   const showHand = lt >= 1 && lt < 3.5;
 
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-start pt-10 px-4" style={{ opacity }}>
-      {/* Scene badge */}
-      <div
-        className="mb-3 px-3 py-1 rounded-full text-xs font-bold"
-        style={{ backgroundColor: `${GREEN}15`, color: GREEN }}
-      >
+    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingTop: '40px', padding: '40px 16px 16px', opacity }}>
+      <div style={{ marginBottom: '8px', padding: '4px 12px', borderRadius: '9999px', fontSize: '12px', fontWeight: 'bold', background: '#f0fdf4', color: GREEN }}>
         ПРАВИЛО 3
       </div>
+      <h2 style={{ fontSize: '16px', fontWeight: 900, color: '#111827', marginBottom: '12px', textAlign: 'center' }}>КОНТАКТЫ СВЕРХУ</h2>
 
-      <h2 className="text-base font-black text-gray-900 mb-3 tracking-tight text-center">КОНТАКТЫ СВЕРХУ</h2>
-
-      {/* Resume */}
-      <div className="w-52 bg-white border-2 border-gray-100 rounded-xl shadow-lg relative overflow-hidden" style={{ height: '220px' }}>
+      <div style={{ width: '208px', background: 'white', border: '2px solid #f3f4f6', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', position: 'relative', overflow: 'hidden', height: '220px' }}>
         {!movedToTop ? (
           <>
-            {/* Paper header */}
-            <div className="h-4 bg-gray-50 rounded-t-md px-2 flex items-center gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-red-300" />
-              <div className="w-1.5 h-1.5 rounded-full bg-yellow-300" />
-              <div className="w-1.5 h-1.5 rounded-full bg-green-300" />
+            <div style={{ height: '12px', background: '#f9fafb', borderRadius: '12px 12px 0 0', display: 'flex', alignItems: 'center', gap: '4px', padding: '0 8px' }}>
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fca5a5' }} />
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fde047' }} />
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#86efac' }} />
             </div>
-            {/* Content lines */}
-            <div className="p-3 space-y-2">
-              <div className="h-2 bg-gray-100 rounded-full w-full" />
-              <div className="h-2 bg-gray-100 rounded-full w-3/4" />
-              <div className="h-2 bg-gray-100 rounded-full w-full" />
-              <div className="h-2 bg-gray-100 rounded-full w-2/3" />
-              <div className="h-2 bg-gray-100 rounded-full w-full" />
-              <div className="h-2 bg-gray-100 rounded-full w-1/2" />
-              <div className="h-2 bg-gray-100 rounded-full w-3/4" />
+            <div style={{ padding: '12px' }}>
+              {[1, 0.75, 1, 0.66, 1, 0.5, 0.75].map((w, i) => (
+                <div key={i} style={{ height: '8px', background: '#f3f4f6', borderRadius: '4px', width: `${w * 100}%`, marginBottom: '8px' }} />
+              ))}
             </div>
-            {/* Contact block at bottom, greyed out */}
-            <div
-              className="absolute bottom-0 left-0 right-0 bg-gray-50 p-2 border-t border-dashed border-gray-200"
-              style={{ opacity: 0.6 }}
-            >
-              <div className="text-[9px] text-gray-400 text-center font-medium">
-                📧 email@mail.ru &nbsp;|&nbsp; 📱 +7 999 000 00 00
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: '#f9fafb', padding: '8px', borderTop: '1px dashed #e5e7eb', opacity: 0.6 }}>
+              <div style={{ fontSize: '9px', color: '#9ca3af', textAlign: 'center', fontWeight: 500 }}>
+                📧 email@mail.ru | 📱 +7 999 000 00 00
               </div>
             </div>
-            {/* Hand dragging */}
             {showHand && (
-              <div className="absolute bottom-6 right-3 text-xl animate-bounce">
+              <div style={{ position: 'absolute', bottom: '20px', right: '12px', fontSize: '20px', animation: 'bounce 0.8s infinite' }}>
                 👆
               </div>
             )}
           </>
         ) : (
           <>
-            {/* Contact block at top */}
-            <div
-              className="p-2.5 border-b-2"
-              style={{ backgroundColor: '#f0fdf4', borderColor: GREEN }}
-            >
-              <div className="text-[10px] font-bold text-gray-800 text-center">
-                📧 email@mail.ru &nbsp;|&nbsp; 📱 +7 999 000 00 00
+            <div style={{ padding: '10px', borderBottom: `2px solid ${GREEN}`, background: '#f0fdf4' }}>
+              <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#1f2937', textAlign: 'center' }}>
+                📧 email@mail.ru | 📱 +7 999 000 00 00
               </div>
-              <div className="flex justify-center mt-1">
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '4px' }}>
                 <svg width="14" height="14" viewBox="0 0 14 14">
                   <polyline points="2,7 5,10 12,3" fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
             </div>
-            {/* Content lines */}
-            <div className="p-3 space-y-2">
-              <div className="h-2 bg-gray-100 rounded-full w-full" />
-              <div className="h-2 bg-gray-100 rounded-full w-3/4" />
-              <div className="h-2 bg-gray-100 rounded-full w-full" />
-              <div className="h-2 bg-gray-100 rounded-full w-2/3" />
-              <div className="h-2 bg-gray-100 rounded-full w-full" />
-              <div className="h-2 bg-gray-100 rounded-full w-1/2" />
+            <div style={{ padding: '12px' }}>
+              {[1, 0.75, 1, 0.66, 1, 0.5].map((w, i) => (
+                <div key={i} style={{ height: '8px', background: '#f3f4f6', borderRadius: '4px', width: `${w * 100}%`, marginBottom: '8px' }} />
+              ))}
             </div>
           </>
         )}
       </div>
 
-      {/* Caption */}
-      <div
-        className="absolute bottom-10 left-4 right-4 text-center"
-        style={{ opacity: lt >= 1 ? 1 : 0, transition: 'opacity 0.3s' }}
-      >
-        <p className="text-xs font-bold text-gray-700 bg-gray-50 border border-gray-100 rounded-lg px-4 py-2 inline-block">
+      <div style={{ position: 'absolute', bottom: '40px', left: '16px', right: '16px', textAlign: 'center', opacity: lt >= 1 ? 1 : 0, transition: 'opacity 0.3s' }}>
+        <p style={{ fontSize: '12px', fontWeight: 'bold', color: '#374151', background: '#f9fafb', border: '1px solid #f3f4f6', borderRadius: '8px', padding: '8px 16px', display: 'inline-block' }}>
           КОНТАКТЫ — В ПЕРВУЮ ОЧЕРЕДЬ
         </p>
       </div>
@@ -607,11 +571,8 @@ function Scene3({ time }: { time: number }) {
   );
 }
 
-/* ============ SCENE: FINAL (36–40s) ============ */
-function SceneFinal({ time }: { time: number }) {
-  const opacity = getSceneOpacity(time, SCENES.final.start, SCENES.final.end, 0.3, 0.01);
-  if (opacity <= 0) return null;
-
+// ===== FINAL SCENE =====
+function SceneFinalEnd({ time }: { time: number }) {
   const lt = time - 36;
   const showResume = lt >= 0.3;
   const showCheck = lt >= 1.2;
@@ -620,42 +581,41 @@ function SceneFinal({ time }: { time: number }) {
   const showCharacter = lt >= 2.8;
 
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center px-6" style={{ opacity }}>
+    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
       {/* Clean Resume */}
-      <div
-        className="w-44 bg-white border-2 rounded-xl shadow-xl p-3 relative"
-        style={{
-          borderColor: showCheck ? GREEN : '#e5e7eb',
-          opacity: showResume ? 1 : 0,
-          transform: showResume ? 'scale(1)' : 'scale(0.7)',
-          transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
-        }}
-      >
-        {/* Contacts on top */}
-        <div className="bg-green-50 rounded-lg p-1.5 mb-2 border" style={{ borderColor: `${GREEN}40` }}>
-          <div className="text-[9px] text-gray-700 text-center font-medium">📧 email@mail.ru | 📱 +7 999</div>
+      <div style={{
+        width: '176px',
+        background: 'white',
+        border: `2px solid ${showCheck ? GREEN : '#e5e7eb'}`,
+        borderRadius: '12px',
+        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+        padding: '12px',
+        opacity: showResume ? 1 : 0,
+        transform: showResume ? 'scale(1)' : 'scale(0.7)',
+        transition: 'all 0.5s ease-out',
+      }}>
+        <div style={{ background: '#f0fdf4', borderRadius: '8px', padding: '6px', marginBottom: '8px', border: `1px solid ${GREEN}40` }}>
+          <div style={{ fontSize: '9px', color: '#374151', textAlign: 'center', fontWeight: 500 }}>📧 email@mail.ru | 📱 +7 999</div>
         </div>
-        {/* Single position */}
-        <div className="bg-green-50 rounded-lg p-1.5 mb-2">
-          <div className="text-[10px] font-bold text-gray-800 text-center">Маркетолог</div>
+        <div style={{ background: '#f0fdf4', borderRadius: '8px', padding: '6px', marginBottom: '8px' }}>
+          <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#1f2937', textAlign: 'center' }}>Маркетолог</div>
         </div>
-        {/* Numbers */}
-        <div className="space-y-0.5">
-          <div className="text-[9px] text-gray-600 font-medium">📈 +30% конверсия</div>
-          <div className="text-[9px] text-gray-600 font-medium">⚡ ×2 скорость</div>
-          <div className="text-[9px] text-gray-600 font-medium">📅 −5 дней цикл</div>
+        <div>
+          <div style={{ fontSize: '9px', color: '#4b5563', fontWeight: 500, marginBottom: '2px' }}>📈 +30% конверсия</div>
+          <div style={{ fontSize: '9px', color: '#4b5563', fontWeight: 500, marginBottom: '2px' }}>⚡ ×2 скорость</div>
+          <div style={{ fontSize: '9px', color: '#4b5563', fontWeight: 500 }}>📅 −5 дней цикл</div>
         </div>
       </div>
 
       {/* Big Green Checkmark */}
-      <div
-        className="absolute top-14 right-6"
-        style={{
-          opacity: showCheck ? 1 : 0,
-          transform: showCheck ? 'scale(1) rotate(0deg)' : 'scale(0) rotate(-180deg)',
-          transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
-        }}
-      >
+      <div style={{
+        position: 'absolute',
+        top: '56px',
+        right: '24px',
+        opacity: showCheck ? 1 : 0,
+        transform: showCheck ? 'scale(1)' : 'scale(0)',
+        transition: 'all 0.4s ease-out',
+      }}>
         <svg width="52" height="52" viewBox="0 0 52 52">
           <circle cx="26" cy="26" r="24" fill={GREEN} opacity="0.1" />
           <circle cx="26" cy="26" r="24" fill="none" stroke={GREEN} strokeWidth="2.5" />
@@ -664,106 +624,85 @@ function SceneFinal({ time }: { time: number }) {
       </div>
 
       {/* Main Text */}
-      <div
-        className="mt-5 text-center"
-        style={{
-          opacity: showText ? 1 : 0,
-          transform: showText ? 'translateY(0) scale(1)' : 'translateY(15px) scale(0.9)',
-          transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
-        }}
-      >
-        <h2 className="text-2xl font-black tracking-tight" style={{ color: GREEN }}>
+      <div style={{
+        marginTop: '20px',
+        textAlign: 'center',
+        opacity: showText ? 1 : 0,
+        transform: showText ? 'translateY(0)' : 'translateY(15px)',
+        transition: 'all 0.4s ease-out',
+      }}>
+        <h2 style={{ fontSize: '24px', fontWeight: 900, color: GREEN, letterSpacing: '-0.025em' }}>
           ОТКЛИК БУДЕТ
         </h2>
       </div>
 
       {/* Down Arrow */}
-      <div
-        className="mt-3"
-        style={{
-          opacity: showArrow ? 1 : 0,
-          transition: 'opacity 0.3s',
-        }}
-      >
-        <svg width="28" height="28" viewBox="0 0 28 28" className="animate-bounce">
+      <div style={{ marginTop: '12px', opacity: showArrow ? 1 : 0, transition: 'opacity 0.3s' }}>
+        <svg width="28" height="28" viewBox="0 0 28 28" style={{ animation: showArrow ? 'bounce 1s infinite' : 'none' }}>
           <path d="M14 4 L14 20 M7 15 L14 22 L21 15" fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
 
-      {/* CTA Area */}
-      <div
-        className="mt-1 bg-gray-50 rounded-xl px-5 py-2.5 border-2 border-dashed border-gray-200"
-        style={{
-          opacity: showArrow ? 1 : 0,
-          transition: 'opacity 0.3s',
-        }}
-      >
-        <p className="text-[10px] text-gray-500 font-bold text-center tracking-wide">ПОДПИСЫВАЙСЯ ↓</p>
+      {/* CTA */}
+      <div style={{
+        marginTop: '4px',
+        background: '#f9fafb',
+        borderRadius: '12px',
+        padding: '10px 20px',
+        border: '2px dashed #e5e7eb',
+        opacity: showArrow ? 1 : 0,
+        transition: 'opacity 0.3s',
+      }}>
+        <p style={{ fontSize: '10px', color: '#6b7280', fontWeight: 'bold', textAlign: 'center', letterSpacing: '0.05em' }}>ПОДПИСЫВАЙСЯ ↓</p>
       </div>
 
-      {/* Character with thumbs up */}
-      <div
-        className="absolute bottom-10 right-4"
-        style={{
-          opacity: showCharacter ? 1 : 0,
-          transform: showCharacter ? 'translateY(0) scale(1)' : 'translateY(40px) scale(0.5)',
-          transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
-        }}
-      >
+      {/* Character */}
+      <div style={{
+        position: 'absolute',
+        bottom: '40px',
+        right: '16px',
+        opacity: showCharacter ? 1 : 0,
+        transform: showCharacter ? 'translateY(0)' : 'translateY(40px)',
+        transition: 'all 0.5s ease-out',
+      }}>
         <Character thumbsUp />
       </div>
     </div>
   );
 }
 
-/* ============ CHARACTER COMPONENT ============ */
+// ===== CHARACTER =====
 function Character({ pointing, thumbsUp }: { pointing?: boolean; thumbsUp?: boolean }) {
   return (
-    <svg width="64" height="96" viewBox="0 0 64 96">
-      {/* Head */}
+    <svg width="60" height="90" viewBox="0 0 64 96">
       <circle cx="32" cy="18" r="14" fill="#fef3c7" stroke="#374151" strokeWidth="2" />
-      {/* Eyes */}
       <circle cx="27" cy="16" r="2" fill="#374151" />
       <circle cx="37" cy="16" r="2" fill="#374151" />
-      {/* Smile */}
       <path d="M28 22 Q32 26 36 22" fill="none" stroke="#374151" strokeWidth="1.5" strokeLinecap="round" />
-      {/* Hoodie body */}
-      <path
-        d="M18 32 Q18 28 24 26 L40 26 Q46 28 46 32 L48 68 L16 68 Z"
-        fill="#374151"
-      />
-      {/* Hood */}
+      <path d="M18 32 Q18 28 24 26 L40 26 Q46 28 46 32 L48 68 L16 68 Z" fill="#374151" />
       <path d="M22 28 Q32 22 42 28" fill="none" stroke="#1f2937" strokeWidth="2" />
-      {/* Hoodie pocket */}
       <rect x="24" y="50" width="16" height="8" rx="2" fill="#4b5563" />
-      {/* Left arm */}
       {pointing && (
         <>
           <path d="M18 38 L4 32" fill="none" stroke="#374151" strokeWidth="6" strokeLinecap="round" />
-          {/* Pointing finger */}
           <circle cx="3" cy="31" r="3" fill="#fef3c7" stroke="#374151" strokeWidth="1" />
         </>
       )}
-      {/* Right arm */}
       {thumbsUp && (
         <>
           <path d="M46 38 L56 28" fill="none" stroke="#374151" strokeWidth="6" strokeLinecap="round" />
-          {/* Thumb up */}
           <rect x="53" y="18" width="5" height="12" rx="2.5" fill="#fef3c7" stroke="#374151" strokeWidth="1" />
           <rect x="50" y="26" width="10" height="6" rx="2" fill="#fef3c7" stroke="#374151" strokeWidth="1" />
         </>
       )}
-      {/* Default arms if no action */}
       {!pointing && !thumbsUp && (
         <>
           <path d="M18 38 L12 52" fill="none" stroke="#374151" strokeWidth="5" strokeLinecap="round" />
           <path d="M46 38 L52 52" fill="none" stroke="#374151" strokeWidth="5" strokeLinecap="round" />
         </>
       )}
-      {/* Legs */}
       <line x1="26" y1="68" x2="24" y2="84" stroke="#1f2937" strokeWidth="5" strokeLinecap="round" />
       <line x1="38" y1="68" x2="40" y2="84" stroke="#1f2937" strokeWidth="5" strokeLinecap="round" />
-      {/* Shoes */}
       <ellipse cx="23" cy="86" rx="6" ry="3.5" fill="#1f2937" />
       <ellipse cx="41" cy="86" rx="6" ry="3.5" fill="#1f2937" />
     </svg>
