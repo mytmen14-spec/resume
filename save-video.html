@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💾 Сохранить видео в WebM</title>
+    <title>💾 Сохранить видео — Максимальное качество</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -12,39 +12,34 @@
             color: white;
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 20px;
         }
-        .container {
-            max-width: 600px;
-            text-align: center;
-        }
-        h1 {
-            font-size: 32px;
-            margin-bottom: 20px;
-        }
-        .step {
-            background: #1f2937;
-            padding: 20px;
-            border-radius: 12px;
-            margin: 15px 0;
-            text-align: left;
-        }
-        .step-number {
+        .container { max-width: 600px; text-align: center; }
+        h1 { font-size: 28px; margin-bottom: 8px; }
+        .subtitle { color: #9ca3af; margin-bottom: 24px; font-size: 14px; }
+        .badge {
             display: inline-block;
             background: #16A34A;
             color: white;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            text-align: center;
-            line-height: 30px;
+            padding: 6px 16px;
+            border-radius: 9999px;
+            font-size: 13px;
             font-weight: bold;
-            margin-right: 10px;
+            margin-bottom: 24px;
         }
-        .button {
+        .step {
+            background: #1f2937;
+            padding: 16px;
+            border-radius: 12px;
+            margin: 10px 0;
+            text-align: left;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .step b { color: #16A34A; }
+        .btn {
             background: #E11D48;
             color: white;
             border: none;
@@ -54,80 +49,68 @@
             border-radius: 9999px;
             cursor: pointer;
             margin: 20px 0;
-            transition: transform 0.2s;
+            box-shadow: 0 10px 25px rgba(225, 29, 72, 0.3);
         }
-        .button:hover {
-            transform: scale(1.05);
-        }
-        .button:disabled {
-            background: #6b7280;
-            cursor: not-allowed;
-            transform: none;
-        }
+        .btn:hover { transform: scale(1.03); }
+        .btn:disabled { background: #4b5563; cursor: not-allowed; transform: none; box-shadow: none; }
         .status {
             background: #1f2937;
-            padding: 15px;
+            padding: 16px;
             border-radius: 8px;
             margin: 15px 0;
-            font-family: monospace;
+            font-size: 14px;
         }
-        .warning {
-            background: #fef3c7;
-            color: #92400e;
-            padding: 15px;
+        .info {
+            background: #172554;
+            color: #93c5fd;
+            padding: 14px;
             border-radius: 8px;
             margin: 15px 0;
             text-align: left;
+            font-size: 13px;
+            line-height: 1.5;
         }
-        code {
-            background: #374151;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 14px;
+        .warn {
+            background: #422006;
+            color: #fcd34d;
+            padding: 14px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: left;
+            font-size: 13px;
+            line-height: 1.5;
         }
+        code { background: #374151; padding: 2px 6px; border-radius: 4px; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>💾 Сохранить видео в WebM</h1>
-        
-        <div class="step">
-            <span class="step-number">1</span>
-            <strong>Откройте приложение</strong><br>
-            Откройте файл <code>dist/index.html</code> в Chrome в отдельной вкладке
-        </div>
+        <p class="subtitle">Максимальное качество • Выбор папки</p>
+        <div class="badge">✨ 10 Mbps • 60 FPS • Выбор папки</div>
 
         <div class="step">
-            <span class="step-number">2</span>
-            <strong>Нажмите кнопку ниже</strong><br>
-            Chrome спросит разрешение на запись экрана
+            <b>1.</b> Откройте <code>dist/index.html</code> в Chrome в отдельной вкладке
         </div>
-
         <div class="step">
-            <span class="step-number">3</span>
-            <strong>Выберите вкладку с приложением</strong><br>
-            В окне выбора выберите вкладку "Вкладки" → выберите вкладку с приложением → "Поделиться"
+            <b>2.</b> Нажмите кнопку ниже → выберите вкладку с приложением → "Поделиться"
         </div>
-
         <div class="step">
-            <span class="step-number">4</span>
-            <strong>Дождитесь окончания</strong><br>
-            Через 40 секунд видео автоматически скачается
+            <b>3.</b> Через 40 секунд откроется окно — <b>выберите папку на компьютере</b> и сохраните
         </div>
 
-        <button class="button" id="recordBtn" onclick="startRecording()">
+        <button class="btn" id="recordBtn" onclick="startRecording()">
             🎬 Начать запись (40 секунд)
         </button>
 
-        <div class="status" id="status">
-            ⏸️ Готов к записи
+        <div class="status" id="status">⏸️ Готов к записи</div>
+
+        <div class="info">
+            <b>💡 Выбор папки:</b> После записи откроется стандартное окно сохранения — там можно выбрать любую папку на компьютере и переименовать файл.
         </div>
 
-        <div class="warning">
-            <strong>⚠️ Важно:</strong><br>
-            • Используйте <strong>Google Chrome</strong><br>
-            • Не закрывайте и не сворачивайте вкладку с приложением<br>
-            • В окне выбора нажмите "Вкладки" сверху, затем выберите вкладку с приложением
+        <div class="warn">
+            <b>⚠️ Требования:</b> Google Chrome. Не сворачивайте вкладку с приложением. В окне выбора: "Вкладки" → выберите вкладку с приложением → "Поделиться".
         </div>
     </div>
 
@@ -139,96 +122,125 @@
         async function startRecording() {
             const btn = document.getElementById('recordBtn');
             const status = document.getElementById('status');
-            
+
             try {
-                status.textContent = '🎥 Запрашиваем разрешение на запись...';
+                status.textContent = '🎥 Запрашиваем разрешение...';
                 btn.disabled = true;
 
-                // Запрашиваем захват экрана
+                // Захват экрана с максимальными настройками
                 stream = await navigator.mediaDevices.getDisplayMedia({
                     video: {
                         cursor: 'never',
-                        displaySurface: 'browser'
+                        displaySurface: 'browser',
+                        width: { ideal: 4096 },
+                        height: { ideal: 4096 },
+                        frameRate: { ideal: 60, max: 60 }
                     },
-                    audio: false
+                    audio: false,
+                    preferCurrentTab: true
                 });
 
-                status.textContent = '🔴 Запись началась! Ждите 40 секунд...';
-                btn.textContent = '🔴 Идёт запись...';
+                const track = stream.getVideoTracks()[0];
+                const settings = track.getSettings();
+                status.textContent = `🎥 Захват: ${settings.width}×${settings.height} @ ${settings.frameRate || '?'}fps`;
 
-                // Создаем MediaRecorder
+                // Определяем лучший кодек
+                let mimeType = 'video/webm;codecs=vp9';
+                if (!MediaRecorder.isTypeSupported(mimeType)) {
+                    mimeType = 'video/webm;codecs=vp8';
+                }
+                if (!MediaRecorder.isTypeSupported(mimeType)) {
+                    mimeType = 'video/webm';
+                }
+
+                // Максимальное качество: 10 Mbps
                 mediaRecorder = new MediaRecorder(stream, {
-                    mimeType: 'video/webm;codecs=vp9',
-                    videoBitsPerSecond: 5000000
+                    mimeType: mimeType,
+                    videoBitsPerSecond: 10000000
                 });
 
                 recordedChunks = [];
 
-                mediaRecorder.ondataavailable = (event) => {
-                    if (event.data.size > 0) {
-                        recordedChunks.push(event.data);
-                    }
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) recordedChunks.push(e.data);
                 };
 
-                mediaRecorder.onstop = () => {
-                    status.textContent = '💾 Сохраняем видео...';
-                    
-                    // Создаем blob и скачиваем
+                mediaRecorder.onstop = async () => {
+                    status.textContent = '💾 Создаём файл...';
                     const blob = new Blob(recordedChunks, { type: 'video/webm' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.style.display = 'none';
-                    a.href = url;
-                    a.download = 'resume-video.webm';
-                    document.body.appendChild(a);
-                    a.click();
-                    
-                    setTimeout(() => {
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                        
-                        status.textContent = '✅ Видео сохранено! Проверьте папку "Загрузки"';
-                        btn.textContent = '🎬 Записать ещё раз';
-                        btn.disabled = false;
-                    }, 100);
 
-                    // Останавливаем все треки
-                    stream.getTracks().forEach(track => track.stop());
+                    // File System Access API — позволяет выбрать папку!
+                    if ('showSaveFilePicker' in window) {
+                        try {
+                            const handle = await window.showSaveFilePicker({
+                                suggestedName: 'resume-video.webm',
+                                types: [{
+                                    description: 'WebM Video',
+                                    accept: { 'video/webm': ['.webm'] }
+                                }]
+                            });
+                            const writable = await handle.createWritable();
+                            await writable.write(blob);
+                            await writable.close();
+                            status.textContent = '✅ Видео сохранено в выбранную папку!';
+                        } catch (err) {
+                            if (err.name === 'AbortError') {
+                                status.textContent = '❌ Сохранение отменено. Нажмите кнопку ещё раз.';
+                            } else {
+                                fallbackDownload(blob);
+                            }
+                        }
+                    } else {
+                        fallbackDownload(blob);
+                    }
+
+                    btn.textContent = '🎬 Записать ещё раз';
+                    btn.disabled = false;
+
+                    if (stream) stream.getTracks().forEach(t => t.stop());
                 };
 
-                // Начинаем запись
+                // Старт
                 mediaRecorder.start(100);
+                status.textContent = '🔴 Идёт запись! Ждите 40 секунд...';
+                btn.textContent = '🔴 Идёт запись...';
 
-                // Автоматически останавливаем через 40 секунд
+                // Стоп через 40 секунд
                 setTimeout(() => {
                     if (mediaRecorder && mediaRecorder.state === 'recording') {
+                        status.textContent = '⏹️ Завершаем...';
                         mediaRecorder.stop();
                     }
                 }, 40000);
 
-                // Если пользователь остановил запись вручную
-                stream.getVideoTracks()[0].onended = () => {
+                // Если пользователь остановил вручную
+                track.onended = () => {
                     if (mediaRecorder && mediaRecorder.state === 'recording') {
                         mediaRecorder.stop();
                     }
                 };
 
             } catch (err) {
-                console.error('Ошибка:', err);
-                
+                console.error(err);
                 if (err.name === 'NotAllowedError') {
-                    status.textContent = '❌ Вы отменили выбор вкладки. Попробуйте ещё раз.';
+                    status.textContent = '❌ Вы отменили выбор. Нажмите кнопку ещё раз.';
                 } else {
                     status.textContent = '❌ Ошибка: ' + err.message;
                 }
-                
                 btn.textContent = '🎬 Начать запись (40 секунд)';
                 btn.disabled = false;
-                
-                if (stream) {
-                    stream.getTracks().forEach(track => track.stop());
-                }
+                if (stream) stream.getTracks().forEach(t => t.stop());
             }
+        }
+
+        function fallbackDownload(blob) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'resume-video.webm';
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            document.getElementById('status').textContent = '✅ Видео скачано! (Папка "Загрузки")';
         }
     </script>
 </body>
