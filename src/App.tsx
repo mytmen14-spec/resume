@@ -11,7 +11,6 @@ export default function App() {
   const [hasStarted, setHasStarted] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   const isRecordingRef = useRef(false);
 
   const startAnimation = () => {
@@ -29,16 +28,20 @@ export default function App() {
   };
 
   const startRecording = async () => {
-    if (containerRef.current && !isRecordingRef.current) {
+    if (!isRecordingRef.current) {
       try {
-        await videoRecorder.startRecording(containerRef.current);
+        await videoRecorder.startRecording();
         isRecordingRef.current = true;
         setIsRecording(true);
         // Автоматически запускаем анимацию
         startAnimation();
-      } catch (err) {
+      } catch (err: any) {
         console.error('Не удалось начать запись:', err);
-        alert('Не удалось начать запись. Используйте Chrome или Firefox.');
+        if (err.name === 'NotAllowedError') {
+          alert('Вы отменили выбор вкладки. Нажмите кнопку ещё раз и выберите эту вкладку для записи.');
+        } else {
+          alert('Не удалось начать запись. Используйте Chrome или Firefox.');
+        }
       }
     }
   };
@@ -80,7 +83,7 @@ export default function App() {
         maxHeight: '95vh',
         borderRadius: '16px',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-      }} ref={containerRef}>
+      }}>
         {/* Scenes */}
         {time < 5.5 && <IntroScene time={time} />}
         {time >= 3 && time < 6 && <CardsScene time={time} />}
@@ -114,40 +117,6 @@ export default function App() {
           </div>
         )}
 
-        {/* Record Button */}
-        {!hasStarted && (
-          <button
-            onClick={startRecording}
-            style={{
-              position: 'absolute',
-              top: '12px',
-              right: '12px',
-              zIndex: 50,
-              background: isRecording ? RED : '#111827',
-              color: 'white',
-              padding: '8px 16px',
-              borderRadius: '9999px',
-              fontSize: '12px',
-              fontWeight: 'bold',
-              border: 'none',
-              cursor: 'pointer',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            {isRecording ? (
-              <>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'white', animation: 'pulse 1s infinite' }} />
-                Запись...
-              </>
-            ) : (
-              <>🎬 Записать видео</>
-            )}
-          </button>
-        )}
-
         {/* Start Overlay */}
         {!hasStarted && (
           <div style={{
@@ -162,30 +131,63 @@ export default function App() {
             justifyContent: 'center',
             zIndex: 50,
             background: 'white',
+            padding: '24px',
           }}>
-            <div style={{ marginBottom: '24px' }}>
-              <svg width="80" height="80" viewBox="0 0 80 80">
+            <div style={{ marginBottom: '16px' }}>
+              <svg width="70" height="70" viewBox="0 0 80 80">
                 <circle cx="40" cy="40" r="36" fill="none" stroke={GREEN} strokeWidth="3" />
                 <polygon points="32,24 58,40 32,56" fill={GREEN} />
               </svg>
             </div>
+            <h2 style={{ fontSize: '18px', fontWeight: 900, color: '#111827', marginBottom: '8px', textAlign: 'center' }}>
+              Резюме за 40 секунд
+            </h2>
+            <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '24px', textAlign: 'center', maxWidth: '260px', lineHeight: 1.5 }}>
+              Выберите способ:
+            </p>
+
+            {/* Кнопка записи WebM */}
             <button
-              onClick={startAnimation}
+              onClick={startRecording}
               style={{
-                background: '#111827',
+                background: RED,
                 color: 'white',
-                padding: '14px 32px',
+                padding: '14px 28px',
                 borderRadius: '9999px',
-                fontSize: '16px',
+                fontSize: '14px',
                 fontWeight: 'bold',
                 border: 'none',
                 cursor: 'pointer',
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                boxShadow: '0 10px 15px -3px rgba(225, 29, 72, 0.3)',
+                marginBottom: '12px',
+                width: '100%',
+                maxWidth: '260px',
               }}
             >
-              ▶ Запустить видео
+              💾 Сохранить как WebM
             </button>
-            <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '12px' }}>40 секунд • Резюме</p>
+            <p style={{ fontSize: '10px', color: '#9ca3af', marginBottom: '20px', textAlign: 'center', maxWidth: '240px', lineHeight: 1.4 }}>
+              Откроется окно выбора — выберите <b>«Эта вкладка»</b> и нажмите «Поделиться»
+            </p>
+
+            {/* Кнопка просмотра */}
+            <button
+              onClick={startAnimation}
+              style={{
+                background: '#f3f4f6',
+                color: '#374151',
+                padding: '10px 24px',
+                borderRadius: '9999px',
+                fontSize: '13px',
+                fontWeight: 'bold',
+                border: 'none',
+                cursor: 'pointer',
+                width: '100%',
+                maxWidth: '260px',
+              }}
+            >
+              ▶ Просто посмотреть
+            </button>
           </div>
         )}
 
