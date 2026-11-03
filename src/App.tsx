@@ -529,7 +529,7 @@ function Scene3Contacts({ time }: { time: number }) {
             </div>
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: '#f9fafb', padding: '8px', borderTop: '1px dashed #e5e7eb', opacity: 0.6 }}>
               <div style={{ fontSize: '9px', color: '#9ca3af', textAlign: 'center', fontWeight: 500 }}>
-                📧 email@mail.ru | 📱 +7 999 000 00 00
+                📧 email@mail.ru | 📱 +7 999 000 00
               </div>
             </div>
             {showHand && (
@@ -542,7 +542,7 @@ function Scene3Contacts({ time }: { time: number }) {
           <>
             <div style={{ padding: '10px', borderBottom: `2px solid ${GREEN}`, background: '#f0fdf4' }}>
               <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#1f2937', textAlign: 'center' }}>
-                📧 email@mail.ru | 📱 +7 999 000 00 00
+                📧 email@mail.ru | 📱 +7 999 000 00
               </div>
               <div style={{ display: 'flex', justifyContent: 'center', marginTop: '4px' }}>
                 <svg width="14" height="14" viewBox="0 0 14 14">
