@@ -206,18 +206,6 @@ function IntroScene({ time }: { time: number }) {
         </div>
       </div>
 
-      {/* Character - positioned to the left of resume, below title */}
-      <div style={{
-        position: 'absolute',
-        top: '50%',
-        left: '16px',
-        transform: time >= 1.2 ? 'translateY(-50%)' : 'translate(-60px, -50%)',
-        opacity: time >= 1.2 ? 1 : 0,
-        transition: 'all 0.5s ease-out',
-      }}>
-        <Character pointing />
-      </div>
-
       {/* Progress Bar */}
       <div style={{
         position: 'absolute',
