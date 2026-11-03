@@ -12,31 +12,34 @@ export default function App() {
   const [isRecording, setIsRecording] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const isRecordingRef = useRef(false);
 
-  const startAnimation = async () => {
+  const startAnimation = () => {
     setTime(0);
     setHasStarted(true);
     setIsPlaying(true);
   };
 
+  const stopRecordingFn = () => {
+    if (isRecordingRef.current) {
+      videoRecorder.stopRecording();
+      isRecordingRef.current = false;
+      setIsRecording(false);
+    }
+  };
+
   const startRecording = async () => {
-    if (containerRef.current && !isRecording) {
+    if (containerRef.current && !isRecordingRef.current) {
       try {
         await videoRecorder.startRecording(containerRef.current);
+        isRecordingRef.current = true;
         setIsRecording(true);
         // Автоматически запускаем анимацию
         startAnimation();
       } catch (err) {
         console.error('Не удалось начать запись:', err);
-        alert('Не удалось начать запись. Убедитесь, что браузер поддерживает MediaRecorder API.');
+        alert('Не удалось начать запись. Используйте Chrome или Firefox.');
       }
-    }
-  };
-
-  const stopRecording = () => {
-    if (isRecording) {
-      videoRecorder.stopRecording();
-      setIsRecording(false);
     }
   };
 
@@ -47,9 +50,9 @@ export default function App() {
           const next = prev + 0.05;
           if (next >= TOTAL_DURATION) {
             setIsPlaying(false);
-            // Автоматически останавливаем запись когда анимация заканчивается
-            if (isRecording) {
-              setTimeout(() => stopRecording(), 500);
+            // Автоматически останавливаем запись
+            if (isRecordingRef.current) {
+              setTimeout(() => stopRecordingFn(), 500);
             }
             return TOTAL_DURATION;
           }
@@ -60,7 +63,7 @@ export default function App() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isPlaying, isRecording]);
+  }, [isPlaying]);
 
   const progress = Math.min((time / TOTAL_DURATION) * 100, 100);
   const displayTime = Math.floor(time);

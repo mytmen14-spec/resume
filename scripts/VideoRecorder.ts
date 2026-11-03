@@ -1,85 +1,101 @@
 /**
- * Скрипт для записи видео в формате WebM
- * Использует MediaRecorder API браузера
+ * Утилита для записи видео в формате WebM
+ * Работает через html2canvas + MediaRecorder API
  */
+import html2canvas from 'html2canvas';
 
 export class VideoRecorder {
   private mediaRecorder: MediaRecorder | null = null;
   private chunks: Blob[] = [];
-  private stream: MediaStream | null = null;
+  private canvas: HTMLCanvasElement | null = null;
+  private animationId: number | null = null;
+  private element: HTMLElement | null = null;
+  private _isRecording = false;
+
+  get isRecording(): boolean {
+    return this._isRecording;
+  }
 
   async startRecording(element: HTMLElement): Promise<void> {
-    try {
-      // Захватываем поток с элемента
-      this.stream = await this.captureStream(element);
-      
-      this.mediaRecorder = new MediaRecorder(this.stream, {
-        mimeType: 'video/webm;codecs=vp9',
-        videoBitsPerSecond: 5000000 // 5 Mbps для хорошего качества
-      });
+    this.element = element;
+    this.chunks = [];
 
-      this.chunks = [];
+    // Создаем canvas для захвата кадров
+    this.canvas = document.createElement('canvas');
+    const scale = 2; // 2x для лучшего качества
+    this.canvas.width = element.offsetWidth * scale;
+    this.canvas.height = element.offsetHeight * scale;
 
-      this.mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          this.chunks.push(e.data);
-        }
-      };
+    const ctx = this.canvas.getContext('2d')!;
+    ctx.scale(scale, scale);
 
-      this.mediaRecorder.onstop = () => {
-        this.downloadVideo();
-        this.cleanup();
-      };
+    // Создаем поток из canvas
+    const stream = this.canvas.captureStream(30); // 30 FPS
 
-      this.mediaRecorder.start(100); // Собираем данные каждые 100мс
-      console.log('🎬 Запись началась...');
-    } catch (err) {
-      console.error('Ошибка при запуске записи:', err);
-      throw err;
+    // Определяем поддерживаемый формат
+    let mimeType = 'video/webm;codecs=vp9';
+    if (!MediaRecorder.isTypeSupported(mimeType)) {
+      mimeType = 'video/webm;codecs=vp8';
     }
+    if (!MediaRecorder.isTypeSupported(mimeType)) {
+      mimeType = 'video/webm';
+    }
+
+    this.mediaRecorder = new MediaRecorder(stream, {
+      mimeType,
+      videoBitsPerSecond: 5000000, // 5 Mbps
+    });
+
+    this.mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) {
+        this.chunks.push(e.data);
+      }
+    };
+
+    this.mediaRecorder.onstop = () => {
+      this._isRecording = false;
+      this.downloadVideo();
+      this.cleanup();
+    };
+
+    this.mediaRecorder.start(100);
+    this._isRecording = true;
+
+    // Запускаем цикл рендеринга кадров
+    const captureFrame = async () => {
+      if (!this._isRecording || !this.element || !this.canvas) return;
+
+      try {
+        const rendered = await html2canvas(this.element, {
+          scale: 1,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          width: this.element.offsetWidth,
+          height: this.element.offsetHeight,
+        });
+        ctx.drawImage(rendered, 0, 0, this.element.offsetWidth, this.element.offsetHeight);
+      } catch (err) {
+        console.error('Ошибка рендеринга кадра:', err);
+      }
+
+      this.animationId = requestAnimationFrame(captureFrame);
+    };
+
+    captureFrame();
+    console.log('🎬 Запись началась...');
   }
 
   stopRecording(): void {
+    this._isRecording = false;
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId);
+      this.animationId = null;
+    }
     if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
       this.mediaRecorder.stop();
       console.log('⏹ Запись остановлена');
     }
-  }
-
-  private async captureStream(element: HTMLElement): Promise<MediaStream> {
-    // Используем captureStream для захвата canvas/video элемента
-    // Для обычных div элементов используем html2canvas или аналог
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    
-    // Устанавливаем размеры canvas
-    canvas.width = element.offsetWidth;
-    canvas.height = element.offsetHeight;
-
-    // Создаем поток из canvas
-    const stream = canvas.captureStream(30); // 30 FPS
-
-    // Функция для рендеринга элемента на canvas
-    const renderFrame = async () => {
-      if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
-        // Используем html2canvas для рендеринга
-        try {
-          const html2canvas = (await import('html2canvas')).default;
-          const renderedCanvas = await html2canvas(element, {
-            scale: 2, // Увеличиваем для лучшего качества
-            useCORS: true,
-            logging: false
-          });
-          ctx?.drawImage(renderedCanvas, 0, 0, canvas.width, canvas.height);
-        } catch (err) {
-          console.error('Ошибка рендеринга:', err);
-        }
-        requestAnimationFrame(renderFrame);
-      }
-    };
-
-    renderFrame();
-    return stream;
   }
 
   private downloadVideo(): void {
@@ -91,8 +107,7 @@ export class VideoRecorder {
     a.download = 'resume-motion-graphics.webm';
     document.body.appendChild(a);
     a.click();
-    
-    // Очищаем
+
     setTimeout(() => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
@@ -102,17 +117,10 @@ export class VideoRecorder {
   }
 
   private cleanup(): void {
-    if (this.stream) {
-      this.stream.getTracks().forEach(track => track.stop());
-      this.stream = null;
-    }
+    this.canvas = null;
+    this.element = null;
     this.mediaRecorder = null;
-  }
-
-  isRecording(): boolean {
-    return this.mediaRecorder !== null && this.mediaRecorder.state === 'recording';
   }
 }
 
-// Экспортируем singleton
 export const videoRecorder = new VideoRecorder();
