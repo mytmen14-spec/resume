@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { videoRecorder } from '../scripts/VideoRecorder';
 
 const TOTAL_DURATION = 40;
 const RED = '#E11D48';
@@ -8,12 +9,35 @@ export default function App() {
   const [time, setTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const startAnimation = () => {
+  const startAnimation = async () => {
     setTime(0);
     setHasStarted(true);
     setIsPlaying(true);
+  };
+
+  const startRecording = async () => {
+    if (containerRef.current && !isRecording) {
+      try {
+        await videoRecorder.startRecording(containerRef.current);
+        setIsRecording(true);
+        // Автоматически запускаем анимацию
+        startAnimation();
+      } catch (err) {
+        console.error('Не удалось начать запись:', err);
+        alert('Не удалось начать запись. Убедитесь, что браузер поддерживает MediaRecorder API.');
+      }
+    }
+  };
+
+  const stopRecording = () => {
+    if (isRecording) {
+      videoRecorder.stopRecording();
+      setIsRecording(false);
+    }
   };
 
   useEffect(() => {
@@ -23,6 +47,10 @@ export default function App() {
           const next = prev + 0.05;
           if (next >= TOTAL_DURATION) {
             setIsPlaying(false);
+            // Автоматически останавливаем запись когда анимация заканчивается
+            if (isRecording) {
+              setTimeout(() => stopRecording(), 500);
+            }
             return TOTAL_DURATION;
           }
           return next;
@@ -32,7 +60,7 @@ export default function App() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isPlaying]);
+  }, [isPlaying, isRecording]);
 
   const progress = Math.min((time / TOTAL_DURATION) * 100, 100);
   const displayTime = Math.floor(time);
@@ -49,7 +77,7 @@ export default function App() {
         maxHeight: '95vh',
         borderRadius: '16px',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-      }}>
+      }} ref={containerRef}>
         {/* Scenes */}
         {time < 5.5 && <IntroScene time={time} />}
         {time >= 3 && time < 6 && <CardsScene time={time} />}
@@ -81,6 +109,40 @@ export default function App() {
           }}>
             {displayTime}/{TOTAL_DURATION}
           </div>
+        )}
+
+        {/* Record Button */}
+        {!hasStarted && (
+          <button
+            onClick={startRecording}
+            style={{
+              position: 'absolute',
+              top: '12px',
+              right: '12px',
+              zIndex: 50,
+              background: isRecording ? RED : '#111827',
+              color: 'white',
+              padding: '8px 16px',
+              borderRadius: '9999px',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            {isRecording ? (
+              <>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'white', animation: 'pulse 1s infinite' }} />
+                Запись...
+              </>
+            ) : (
+              <>🎬 Записать видео</>
+            )}
+          </button>
         )}
 
         {/* Start Overlay */}
