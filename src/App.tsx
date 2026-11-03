@@ -167,13 +167,10 @@ function IntroScene({ time }: { time: number }) {
   const opacity = time < 0.5 ? time / 0.5 : time > 5 ? (5.5 - time) / 0.5 : 1;
   
   return (
-    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px', opacity }}>
+    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', padding: '16px', opacity }}>
       {/* Title */}
       <div style={{
-        position: 'absolute',
-        top: '40px',
-        left: '16px',
-        right: '16px',
+        marginTop: '32px',
         textAlign: 'center',
         opacity: time >= 0.8 ? 1 : 0,
         transform: time >= 0.8 ? 'scale(1)' : 'scale(0.5)',
@@ -198,7 +195,7 @@ function IntroScene({ time }: { time: number }) {
         border: '2px solid #e5e7eb',
         borderRadius: '8px',
         boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-        marginTop: '24px',
+        marginTop: '32px',
         transform: time < 0.6 ? 'translateY(120%)' : 'translateY(0)',
         transition: 'transform 0.6s ease-out',
       }}>
@@ -209,13 +206,13 @@ function IntroScene({ time }: { time: number }) {
         </div>
       </div>
 
-      {/* Character */}
+      {/* Character - positioned to the left of resume, below title */}
       <div style={{
         position: 'absolute',
-        bottom: '96px',
-        left: '24px',
+        top: '50%',
+        left: '16px',
+        transform: time >= 1.2 ? 'translateY(-50%)' : 'translate(-60px, -50%)',
         opacity: time >= 1.2 ? 1 : 0,
-        transform: time >= 1.2 ? 'translateX(0)' : 'translateX(-60px)',
         transition: 'all 0.5s ease-out',
       }}>
         <Character pointing />
